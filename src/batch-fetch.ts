@@ -5,8 +5,8 @@ import type {
   FetchArgs,
   BatchFetchResult,
   BatchFetchConfig,
-} from "./types.js";
-import { globalFetchStore } from "./store.js";
+} from "./types";
+import { globalFetchStore } from "./store";
 
 /**
  * Enhanced fetch function with concurrency control
@@ -50,19 +50,20 @@ export async function fetch(
  */
 export async function fetchList(
   requests: (RequestInfo | URL | FetchArgs)[],
-  globalConfig?: BatchFetchConfig
+  overrideConfig?: Partial<BatchFetchConfig>
 ): Promise<BatchFetchResult[]> {
   if (requests.length === 0) {
     return [];
   }
 
-  // Apply global config if provided
-  if (globalConfig) {
-    globalFetchStore.updateConfig(globalConfig);
-  }
+  // Use override config for this call only, fallback to global config
+  const effectiveConfig = {
+    ...globalFetchStore.getStatus().config,
+    ...overrideConfig,
+  };
 
   // Create a new batch processor for each fetchList call
-  const batch = new Batch({ concurrency: globalFetchStore.concurrency });
+  const batch = new Batch({ concurrency: effectiveConfig.concurrency });
 
   // Convert requests to standardized format and add to batch
   const standardizedRequests: FetchArgs[] = requests.map((request, index) => {
@@ -81,10 +82,11 @@ export async function fetchList(
   standardizedRequests.forEach((reqArgs, index) => {
     batch.add(async () => {
       try {
-        const response = await globalFetchStore.executeFetch(
-          reqArgs.resource,
-          reqArgs.init
-        );
+        const response = await globalFetchStore.executeFetch(reqArgs.resource, {
+          ...effectiveConfig.defaultInit,
+          ...reqArgs.init,
+          ...(effectiveConfig.timeout && { timeout: effectiveConfig.timeout }),
+        });
         return {
           resource: reqArgs.resource,
           init: reqArgs.init,

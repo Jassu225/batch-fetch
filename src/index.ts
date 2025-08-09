@@ -12,14 +12,10 @@ export {
   getFailedResults,
   extractResponses,
   extractErrors,
-} from "./batch-fetch.js";
+} from "./batch-fetch";
 
 // Configuration and store management
-export {
-  configureBatchFetch,
-  getFetchStatus,
-  globalFetchStore,
-} from "./store.js";
+export { configureBatchFetch, getFetchStatus, globalFetchStore } from "./store";
 
 // Types
 export type {
@@ -28,7 +24,7 @@ export type {
   FetchArgs,
   BatchFetchResult,
   FetchStore,
-} from "./types.js";
+} from "./types";
 
 // Re-export useful types from ts-batch-processor
 export { TaskResponseStatus } from "ts-batch-processor/task";
@@ -37,4 +33,4 @@ export type { TaskResult } from "ts-batch-processor/task";
 /**
  * Default export provides the main fetch function as a drop-in replacement
  */
-export { fetch as default } from "./batch-fetch.js";
+export { fetch as default } from "./batch-fetch";

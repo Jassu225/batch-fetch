@@ -21,6 +21,14 @@ export interface BatchRequestInit extends RequestInit {
 }
 
 /**
+ * Internal RequestInit that includes timeout for store operations
+ */
+export interface InternalRequestInit extends RequestInit {
+  /** Request timeout in milliseconds */
+  timeout?: number;
+}
+
+/**
  * Fetch arguments as an object for fetchList function
  */
 export interface FetchArgs {

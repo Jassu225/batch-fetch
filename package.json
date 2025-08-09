@@ -18,11 +18,14 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --project tsconfig.build.json",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run clean && npm run build",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" npx jest",
+    "test:watch": "npm run test -- --watch",
+    "test:coverage": "npm run test -- --coverage",
+    "test:ci": "npm run test -- --ci --coverage --watchAll=false",
     "morph:apply": "dotenv -e .env.development -- tsx ./dev-tools/morph-apply apply",
     "morph:generate": "dotenv -e .env.development -- tsx ./dev-tools/morph-apply generate"
   },
@@ -39,15 +42,20 @@
   ],
   "author": "",
   "license": "MIT",
-  "type": "module",
   "dependencies": {
     "ts-batch-processor": "^1.2.2"
   },
   "devDependencies": {
+    "@jest/globals": "^30.0.5",
+    "@types/jest": "^30.0.0",
     "@types/node": "^24.2.1",
     "dotenv-cli": "^10.0.0",
+    "jest": "^30.0.5",
+    "jest-environment-jsdom": "^30.0.5",
     "openai": "^5.12.2",
+    "ts-jest": "^29.4.1",
     "tsx": "^4.20.3",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "undici": "^7.13.0"
   }
 }

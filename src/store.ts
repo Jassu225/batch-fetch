@@ -1,4 +1,8 @@
-import type { BatchFetchConfig, FetchStore } from "./types.js";
+import type {
+  BatchFetchConfig,
+  FetchStore,
+  InternalRequestInit,
+} from "./types";
 
 /**
  * Default configuration for batch fetch operations
@@ -65,7 +69,7 @@ class GlobalFetchStore implements FetchStore {
    */
   async executeFetch(
     resource: RequestInfo | URL,
-    init?: RequestInit
+    init?: InternalRequestInit
   ): Promise<Response> {
     // Create timeout controller if timeout is specified
     const timeoutMs = (init as any)?.timeout || this._config.timeout;
