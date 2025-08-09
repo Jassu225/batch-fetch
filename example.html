@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>batch-fetch Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .example {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>batch-fetch Examples</h1>
+    
+    <div class="example">
+        <h3>Example 1: Single Fetch with Concurrency</h3>
+        <button onclick="singleFetchExample()">Run Single Fetch</button>
+        <p>Demonstrates using batch-fetch as a drop-in replacement for fetch()</p>
+    </div>
+
+    <div class="example">
+        <h3>Example 2: Batch Fetch Multiple URLs</h3>
+        <button onclick="batchFetchExample()">Run Batch Fetch</button>
+        <p>Fetch multiple URLs with concurrency control (concurrency: 2)</p>
+    </div>
+
+    <div class="example">
+        <h3>Example 3: Mixed Request Types</h3>
+        <button onclick="mixedRequestsExample()">Run Mixed Requests</button>
+        <p>Combine GET and POST requests with different configurations</p>
+    </div>
+
+    <div class="example">
+        <h3>Example 4: Error Handling</h3>
+        <button onclick="errorHandlingExample()">Run Error Handling</button>
+        <p>Demonstrates graceful error handling with invalid URLs</p>
+    </div>
+
+    <div id="results"></div>
+
+    <script type="module">
+        // Import batch-fetch (in a real project, this would be from npm)
+        // For this example, we'll mock the API since we don't have a bundler
+        
+        // Mock implementation for demo purposes
+        const mockFetch = async (url, init = {}) => {
+            await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
+            
+            if (url.includes('error')) {
+                throw new Error('Simulated network error');
+            }
+            
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ 
+                    url, 
+                    method: init.method || 'GET',
+                    timestamp: new Date().toISOString() 
+                })
+            };
+        };
+
+        const mockFetchList = async (requests, config = {}) => {
+            const results = [];
+            const concurrency = config.concurrency || 3;
+            
+            console.log(`Processing ${requests.length} requests with concurrency: ${concurrency}`);
+            
+            // Simulate batch processing
+            for (let i = 0; i < requests.length; i += concurrency) {
+                const batch = requests.slice(i, i + concurrency);
+                const batchPromises = batch.map(async (request, batchIndex) => {
+                    const index = i + batchIndex;
+                    try {
+                        const url = typeof request === 'string' ? request : request.resource;
+                        const init = typeof request === 'string' ? {} : request.init || {};
+                        const response = await mockFetch(url, init);
+                        return {
+                            resource: url,
+                            init,
+                            response,
+                            error: undefined,
+                            success: true,
+                            index
+                        };
+                    } catch (error) {
+                        const url = typeof request === 'string' ? request : request.resource;
+                        const init = typeof request === 'string' ? {} : request.init || {};
+                        return {
+                            resource: url,
+                            init,
+                            response: undefined,
+                            error,
+                            success: false,
+                            index
+                        };
+                    }
+                });
+                
+                const batchResults = await Promise.all(batchPromises);
+                results.push(...batchResults);
+            }
+            
+            return results;
+        };
+
+        // Example functions
+        window.singleFetchExample = async () => {
+            const results = document.getElementById('results');
+            results.textContent = 'Running single fetch example...\n';
+            
+            try {
+                const response = await mockFetch('https://jsonplaceholder.typicode.com/posts/1');
+                const data = await response.json();
+                results.textContent += `✅ Single fetch completed successfully!\n`;
+                results.textContent += `Data: ${JSON.stringify(data, null, 2)}\n`;
+            } catch (error) {
+                results.textContent += `❌ Error: ${error.message}\n`;
+            }
+        };
+
+        window.batchFetchExample = async () => {
+            const results = document.getElementById('results');
+            results.textContent = 'Running batch fetch example...\n';
+            
+            const requests = [
+                'https://jsonplaceholder.typicode.com/posts/1',
+                'https://jsonplaceholder.typicode.com/posts/2',
+                'https://jsonplaceholder.typicode.com/posts/3',
+                'https://jsonplaceholder.typicode.com/posts/4',
+                'https://jsonplaceholder.typicode.com/posts/5'
+            ];
+            
+            try {
+                const startTime = Date.now();
+                const batchResults = await mockFetchList(requests, { concurrency: 2 });
+                const endTime = Date.now();
+                
+                results.textContent += `✅ Batch fetch completed in ${endTime - startTime}ms!\n`;
+                results.textContent += `Processed ${batchResults.length} requests\n`;
+                results.textContent += `Successful: ${batchResults.filter(r => r.success).length}\n`;
+                results.textContent += `Failed: ${batchResults.filter(r => !r.success).length}\n\n`;
+                
+                batchResults.forEach((result, index) => {
+                    if (result.success) {
+                        results.textContent += `[${index}] ✅ ${result.resource}\n`;
+                    } else {
+                        results.textContent += `[${index}] ❌ ${result.resource}: ${result.error.message}\n`;
+                    }
+                });
+            } catch (error) {
+                results.textContent += `❌ Error: ${error.message}\n`;
+            }
+        };
+
+        window.mixedRequestsExample = async () => {
+            const results = document.getElementById('results');
+            results.textContent = 'Running mixed requests example...\n';
+            
+            const requests = [
+                'https://jsonplaceholder.typicode.com/posts/1',
+                {
+                    resource: 'https://jsonplaceholder.typicode.com/posts',
+                    init: {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: 'New Post', body: 'Content' })
+                    }
+                },
+                'https://jsonplaceholder.typicode.com/users/1',
+                {
+                    resource: 'https://jsonplaceholder.typicode.com/posts/1',
+                    init: { method: 'DELETE' }
+                }
+            ];
+            
+            try {
+                const batchResults = await mockFetchList(requests, { concurrency: 2 });
+                
+                results.textContent += `✅ Mixed requests completed!\n\n`;
+                
+                batchResults.forEach((result, index) => {
+                    const method = result.init?.method || 'GET';
+                    if (result.success) {
+                        results.textContent += `[${index}] ✅ ${method} ${result.resource}\n`;
+                    } else {
+                        results.textContent += `[${index}] ❌ ${method} ${result.resource}: ${result.error.message}\n`;
+                    }
+                });
+            } catch (error) {
+                results.textContent += `❌ Error: ${error.message}\n`;
+            }
+        };
+
+        window.errorHandlingExample = async () => {
+            const results = document.getElementById('results');
+            results.textContent = 'Running error handling example...\n';
+            
+            const requests = [
+                'https://jsonplaceholder.typicode.com/posts/1',
+                'https://invalid-url-error.example.com/error',
+                'https://jsonplaceholder.typicode.com/posts/2',
+                'https://another-error.example.com/error',
+                'https://jsonplaceholder.typicode.com/posts/3'
+            ];
+            
+            try {
+                const batchResults = await mockFetchList(requests, { concurrency: 3 });
+                
+                const successful = batchResults.filter(r => r.success);
+                const failed = batchResults.filter(r => !r.success);
+                
+                results.textContent += `✅ Error handling example completed!\n`;
+                results.textContent += `Total requests: ${batchResults.length}\n`;
+                results.textContent += `Successful: ${successful.length}\n`;
+                results.textContent += `Failed: ${failed.length}\n\n`;
+                
+                results.textContent += `Successful requests:\n`;
+                successful.forEach(result => {
+                    results.textContent += `  ✅ ${result.resource}\n`;
+                });
+                
+                results.textContent += `\nFailed requests:\n`;
+                failed.forEach(result => {
+                    results.textContent += `  ❌ ${result.resource}: ${result.error.message}\n`;
+                });
+            } catch (error) {
+                results.textContent += `❌ Error: ${error.message}\n`;
+            }
+        };
+    </script>
+</body>
+</html>

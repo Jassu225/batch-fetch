@@ -1,0 +1,53 @@
+{
+  "name": "batch-fetch",
+  "version": "1.0.0",
+  "description": "A concurrency-controlled fetch library for browsers using ts-batch-processor",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "morph:apply": "dotenv -e .env.development -- tsx ./dev-tools/morph-apply apply",
+    "morph:generate": "dotenv -e .env.development -- tsx ./dev-tools/morph-apply generate"
+  },
+  "keywords": [
+    "fetch",
+    "batch",
+    "concurrency",
+    "browser",
+    "http",
+    "request",
+    "batch-processor",
+    "rate-limiting",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "ts-batch-processor": "^1.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "dotenv-cli": "^10.0.0",
+    "openai": "^5.12.2",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2"
+  }
+}
