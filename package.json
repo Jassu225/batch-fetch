@@ -25,9 +25,7 @@
     "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" npx jest",
     "test:watch": "npm run test -- --watch",
     "test:coverage": "npm run test -- --coverage",
-    "test:ci": "npm run test -- --ci --coverage --watchAll=false",
-    "morph:apply": "dotenv -e .env.development -- tsx ./dev-tools/morph-apply apply",
-    "morph:generate": "dotenv -e .env.development -- tsx ./dev-tools/morph-apply generate"
+    "test:ci": "npm run test -- --ci --coverage --watchAll=false"
   },
   "keywords": [
     "fetch",
@@ -55,5 +53,13 @@
     "tsx": "^4.20.3",
     "typescript": "^5.9.2",
     "undici": "^7.13.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jassu225/batch-fetch"
+  },
+  "homepage": "https://github.com/Jassu225/batch-fetch/blob/main/README.md",
+  "publishConfig": {
+    "access": "public"
   }
 }
