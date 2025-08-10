@@ -1,6 +1,5 @@
 // import { describe, it, expect } from "@jest/globals";
 import {
-  createFetchArgs,
   getSuccessfulResults,
   getFailedResults,
   extractResponses,
@@ -61,50 +60,6 @@ describe("Unit Tests", () => {
   });
 
   describe("Utility Functions", () => {
-    describe("createFetchArgs", () => {
-      it("should create FetchArgs with resource only", () => {
-        const args = createFetchArgs("https://catfact.ninja/fact");
-
-        expect(args).toEqual({
-          resource: "https://catfact.ninja/fact",
-          init: undefined,
-        });
-      });
-
-      it("should create FetchArgs with resource and init", () => {
-        const init = {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ data: "test" }),
-        };
-
-        const args = createFetchArgs("https://catfact.ninja/breeds", init);
-
-        expect(args).toEqual({
-          resource: "https://catfact.ninja/breeds",
-          init,
-        });
-      });
-
-      it("should work with URL objects", () => {
-        const url = new URL("https://catfact.ninja/breeds?limit=5");
-        const args = createFetchArgs(url);
-
-        expect(args.resource).toBe(url);
-        expect(args.init).toBeUndefined();
-      });
-
-      it("should work with Request objects", () => {
-        const request = new Request("https://catfact.ninja/fact", {
-          method: "GET",
-        });
-        const args = createFetchArgs(request);
-
-        expect(args.resource).toBe(request);
-        expect(args.init).toBeUndefined();
-      });
-    });
-
     describe("getSuccessfulResults", () => {
       it("should return only successful results", () => {
         const results: BatchFetchResult[] = [

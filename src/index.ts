@@ -7,7 +7,6 @@
 export {
   fetch,
   fetchList,
-  createFetchArgs,
   getSuccessfulResults,
   getFailedResults,
   extractResponses,

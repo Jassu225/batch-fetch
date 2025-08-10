@@ -92,12 +92,12 @@ const response = await fetch("/api/data", {
 Fetch multiple resources with concurrency control.
 
 ```typescript
-import { fetchList, createFetchArgs } from "ts-batch-fetch";
+import { fetchList } from "ts-batch-fetch";
 
 const requests = [
   "/api/endpoint1",
   new URL("https://api.example.com/data"),
-  createFetchArgs("/api/endpoint2", { method: "POST" }),
+  { resource: "/api/endpoint2", init: { method: "POST" } },
   {
     resource: "/api/endpoint3",
     init: { headers: { Accept: "application/json" } },
@@ -177,18 +177,7 @@ const responses = extractResponses(results);
 const errors = extractErrors(results);
 ```
 
-### Creating Fetch Arguments
 
-```typescript
-import { createFetchArgs } from "ts-batch-fetch";
-
-// Helper for creating FetchArgs objects
-const args = createFetchArgs("/api/data", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ data: "value" }),
-});
-```
 
 ## 📖 Usage Examples
 
@@ -216,7 +205,7 @@ async function fetchUserData() {
 ### Example 2: Mixed Request Types
 
 ```typescript
-import { fetchList, createFetchArgs } from "ts-batch-fetch";
+import { fetchList } from "ts-batch-fetch";
 
 const requests = [
   // Simple GET requests
@@ -224,11 +213,14 @@ const requests = [
   "/api/status",
 
   // POST request with body
-  createFetchArgs("/api/data", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "update" }),
-  }),
+  {
+    resource: "/api/data",
+    init: {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "update" }),
+    },
+  },
 
   // Custom timeout
   {

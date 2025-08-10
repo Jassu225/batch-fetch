@@ -113,12 +113,6 @@ export async function fetchList(requests, overrideConfig) {
     });
 }
 /**
- * Utility function to create fetch arguments object
- */
-export function createFetchArgs(resource, init) {
-    return { resource, init };
-}
-/**
  * Utility function to filter successful results from fetchList
  */
 export function getSuccessfulResults(results) {

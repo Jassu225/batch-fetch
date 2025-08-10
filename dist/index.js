@@ -3,7 +3,7 @@
  * Built on top of ts-batch-processor for efficient request batching
  */
 // Main fetch functions
-export { fetch, fetchList, createFetchArgs, getSuccessfulResults, getFailedResults, extractResponses, extractErrors, } from "./batch-fetch";
+export { fetch, fetchList, getSuccessfulResults, getFailedResults, extractResponses, extractErrors, } from "./batch-fetch";
 // Configuration and store management
 export { default as GlobalFetchStore } from "./store";
 export { default as GlobalConfig } from "./config";
