@@ -21,6 +21,14 @@ export interface BatchRequestInit extends RequestInit {
 }
 
 /**
+ * RequestInit for single fetch calls (no concurrency control)
+ */
+export interface FetchRequestInit extends RequestInit {
+  /** Request timeout in milliseconds */
+  timeout?: number;
+}
+
+/**
  * Internal RequestInit that includes timeout for store operations
  */
 export interface InternalRequestInit extends RequestInit {
@@ -66,6 +74,11 @@ export interface FetchStore {
   activeRequests: number;
   /** Queue of pending requests */
   requestQueue: Array<() => Promise<void>>;
-  /** Default configuration */
-  config: BatchFetchConfig;
+  /** Get current status */
+  getStatus(): {
+    concurrency: number;
+    activeRequests: number;
+    queueLength: number;
+    config: BatchFetchConfig;
+  };
 }

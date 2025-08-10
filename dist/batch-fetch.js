@@ -1,48 +1,37 @@
 import Batch from "ts-batch-processor";
 import { TaskResponseStatus } from "ts-batch-processor/task";
-import { globalFetchStore } from "./store.js";
+import GlobalFetchStore from "./store";
+import GlobalConfig from "./config";
 /**
- * Enhanced fetch function with concurrency control
- * Drop-in replacement for browser's fetch API with additional batch options
+ * Enhanced fetch function with timeout support
+ * Drop-in replacement for browser's fetch API with additional timeout options
+ * Uses global store to manage request queuing if concurrency limit is reached
  */
 export async function fetch(resource, init) {
-    // Extract batch-specific options
-    const { concurrency, timeout, ...fetchInit } = init || {};
-    // Use per-request concurrency if specified, otherwise use global
-    const effectiveConcurrency = concurrency || globalFetchStore.concurrency;
-    // Create a single-item batch for this fetch
-    const batch = new Batch({ concurrency: effectiveConcurrency });
-    // Add the fetch task
-    batch.add(async () => {
-        return await globalFetchStore.executeFetch(resource, {
-            ...fetchInit,
-            ...(timeout && { timeout }),
-        });
+    // Extract timeout option
+    const { timeout, ...fetchInit } = init || {};
+    // Use the global store to execute fetch
+    // The store will queue requests if concurrency limit is reached
+    return await GlobalFetchStore.instance.executeFetch(resource, {
+        ...fetchInit,
+        ...(timeout && { timeout }),
     });
-    // Process the batch and return the single result
-    const results = await batch.process();
-    const result = results[0];
-    if (result.responseStatus === TaskResponseStatus.SUCCESS) {
-        return result.response;
-    }
-    else {
-        throw result.error || new Error("Fetch failed");
-    }
 }
 /**
  * Fetch multiple resources with concurrency control
  * Takes an array of resources or fetch argument objects and returns responses
  */
-export async function fetchList(requests, globalConfig) {
+export async function fetchList(requests, overrideConfig) {
     if (requests.length === 0) {
         return [];
     }
-    // Apply global config if provided
-    if (globalConfig) {
-        globalFetchStore.updateConfig(globalConfig);
-    }
+    // Use override config for this call only, fallback to global config
+    const effectiveConfig = {
+        ...GlobalConfig.instance.config,
+        ...overrideConfig,
+    };
     // Create a new batch processor for each fetchList call
-    const batch = new Batch({ concurrency: globalFetchStore.concurrency });
+    const batch = new Batch({ concurrency: effectiveConfig.concurrency });
     // Convert requests to standardized format and add to batch
     const standardizedRequests = requests.map((request, index) => {
         if (typeof request === "string" ||
@@ -58,15 +47,36 @@ export async function fetchList(requests, globalConfig) {
     standardizedRequests.forEach((reqArgs, index) => {
         batch.add(async () => {
             try {
-                const response = await globalFetchStore.executeFetch(reqArgs.resource, reqArgs.init);
-                return {
-                    resource: reqArgs.resource,
-                    init: reqArgs.init,
-                    response,
-                    error: undefined,
-                    success: true,
-                    index,
-                };
+                // Create timeout controller if timeout is specified
+                const timeoutMs = reqArgs.init?.timeout || effectiveConfig.timeout;
+                const controller = new AbortController();
+                const timeoutId = timeoutMs
+                    ? setTimeout(() => controller.abort(), timeoutMs)
+                    : null;
+                try {
+                    // Merge default init with provided init
+                    const finalInit = {
+                        ...effectiveConfig.defaultInit,
+                        ...reqArgs.init,
+                        signal: controller.signal,
+                    };
+                    const response = await fetch(reqArgs.resource, finalInit);
+                    if (timeoutId)
+                        clearTimeout(timeoutId);
+                    return {
+                        resource: reqArgs.resource,
+                        init: reqArgs.init,
+                        response,
+                        error: undefined,
+                        success: true,
+                        index,
+                    };
+                }
+                catch (error) {
+                    if (timeoutId)
+                        clearTimeout(timeoutId);
+                    throw error;
+                }
             }
             catch (error) {
                 return {

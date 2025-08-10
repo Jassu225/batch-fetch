@@ -6,17 +6,14 @@ import {
   extractResponses,
   extractErrors,
 } from "../batch-fetch";
-import {
-  globalFetchStore,
-  configureBatchFetch,
-  getFetchStatus,
-} from "../store";
+import GlobalConfig from "../config";
+import GlobalFetchStore from "../store";
 import type { BatchFetchResult } from "../types";
 
 describe("Unit Tests", () => {
   describe("Store Configuration", () => {
     it("should have default configuration", () => {
-      const status = globalFetchStore.getStatus();
+      const status = GlobalFetchStore.instance.getStatus();
       expect(status.concurrency).toBeGreaterThan(0);
       expect(status.activeRequests).toBe(0);
       expect(status.queueLength).toBe(0);
@@ -24,29 +21,29 @@ describe("Unit Tests", () => {
     });
 
     it("should update concurrency", () => {
-      globalFetchStore.concurrency = 8;
-      expect(globalFetchStore.concurrency).toBe(8);
-      expect(globalFetchStore.getStatus().concurrency).toBe(8);
+      GlobalConfig.instance.updateConfig({ concurrency: 8 });
+      expect(GlobalFetchStore.instance.concurrency).toBe(8);
+      expect(GlobalFetchStore.instance.getStatus().concurrency).toBe(8);
     });
 
     it("should throw error for invalid concurrency", () => {
       expect(() => {
-        globalFetchStore.concurrency = 0;
+        GlobalConfig.instance.updateConfig({ concurrency: 0 });
       }).toThrow("Concurrency must be at least 1");
 
       expect(() => {
-        globalFetchStore.concurrency = -1;
+        GlobalConfig.instance.updateConfig({ concurrency: -1 });
       }).toThrow("Concurrency must be at least 1");
     });
 
-    it("should update configuration via configureBatchFetch", () => {
-      configureBatchFetch({
+    it("should update configuration via GlobalConfig", () => {
+      GlobalConfig.instance.updateConfig({
         concurrency: 6,
         timeout: 15000,
         defaultInit: { headers: { "User-Agent": "TestAgent" } },
       });
 
-      const status = getFetchStatus();
+      const status = GlobalFetchStore.instance.getStatus();
       expect(status.concurrency).toBe(6);
       expect(status.config.timeout).toBe(15000);
       expect(status.config.defaultInit).toEqual({
@@ -55,8 +52,8 @@ describe("Unit Tests", () => {
     });
 
     it("should return immutable config copy", () => {
-      const status1 = getFetchStatus();
-      const status2 = getFetchStatus();
+      const status1 = GlobalFetchStore.instance.getStatus();
+      const status2 = GlobalFetchStore.instance.getStatus();
 
       expect(status1.config).not.toBe(status2.config); // Different objects
       expect(status1.config).toEqual(status2.config); // Same values

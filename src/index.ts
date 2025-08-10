@@ -15,7 +15,8 @@ export {
 } from "./batch-fetch";
 
 // Configuration and store management
-export { configureBatchFetch, getFetchStatus, globalFetchStore } from "./store";
+export { default as GlobalFetchStore } from "./store";
+export { default as GlobalConfig } from "./config";
 
 // Types
 export type {

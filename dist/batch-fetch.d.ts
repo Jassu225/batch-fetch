@@ -1,14 +1,15 @@
-import type { BatchRequestInit, FetchArgs, BatchFetchResult, BatchFetchConfig } from "./types.js";
+import type { BatchRequestInit, FetchRequestInit, FetchArgs, BatchFetchResult, BatchFetchConfig } from "./types";
 /**
- * Enhanced fetch function with concurrency control
- * Drop-in replacement for browser's fetch API with additional batch options
+ * Enhanced fetch function with timeout support
+ * Drop-in replacement for browser's fetch API with additional timeout options
+ * Uses global store to manage request queuing if concurrency limit is reached
  */
-export declare function fetch(resource: RequestInfo | URL, init?: BatchRequestInit): Promise<Response>;
+export declare function fetch(resource: RequestInfo | URL, init?: FetchRequestInit): Promise<Response>;
 /**
  * Fetch multiple resources with concurrency control
  * Takes an array of resources or fetch argument objects and returns responses
  */
-export declare function fetchList(requests: (RequestInfo | URL | FetchArgs)[], globalConfig?: BatchFetchConfig): Promise<BatchFetchResult[]>;
+export declare function fetchList(requests: (RequestInfo | URL | FetchArgs)[], overrideConfig?: Partial<BatchFetchConfig>): Promise<BatchFetchResult[]>;
 /**
  * Utility function to create fetch arguments object
  */

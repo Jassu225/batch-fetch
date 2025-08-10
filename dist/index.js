@@ -3,12 +3,13 @@
  * Built on top of ts-batch-processor for efficient request batching
  */
 // Main fetch functions
-export { fetch, fetchList, createFetchArgs, getSuccessfulResults, getFailedResults, extractResponses, extractErrors, } from "./batch-fetch.js";
+export { fetch, fetchList, createFetchArgs, getSuccessfulResults, getFailedResults, extractResponses, extractErrors, } from "./batch-fetch";
 // Configuration and store management
-export { configureBatchFetch, getFetchStatus, globalFetchStore, } from "./store.js";
+export { default as GlobalFetchStore } from "./store";
+export { default as GlobalConfig } from "./config";
 // Re-export useful types from ts-batch-processor
 export { TaskResponseStatus } from "ts-batch-processor/task";
 /**
  * Default export provides the main fetch function as a drop-in replacement
  */
-export { fetch as default } from "./batch-fetch.js";
+export { fetch as default } from "./batch-fetch";

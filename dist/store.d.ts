@@ -1,26 +1,29 @@
-import type { BatchFetchConfig, FetchStore, InternalRequestInit } from "./types.js";
+import type { BatchFetchConfig, FetchStore, InternalRequestInit } from "./types";
 /**
  * Global store for managing fetch concurrency across the entire application
  */
-declare class GlobalFetchStore implements FetchStore {
-    private _concurrency;
+export default class GlobalFetchStore implements FetchStore {
     private _activeRequests;
     private _requestQueue;
-    private _config;
-    constructor(config?: BatchFetchConfig);
+    private static _instance;
+    private constructor();
+    static get instance(): GlobalFetchStore;
     get concurrency(): number;
-    set concurrency(value: number);
     get activeRequests(): number;
     get requestQueue(): Array<() => Promise<void>>;
     get config(): BatchFetchConfig;
     /**
-     * Update the global configuration
-     */
-    updateConfig(config: Partial<BatchFetchConfig>): void;
-    /**
      * Execute a fetch request with concurrency management
      */
     executeFetch(resource: RequestInfo | URL, init?: InternalRequestInit): Promise<Response>;
+    /**
+     * Internal method to execute fetch and manage active request count
+     */
+    private _executeFetchInternal;
+    /**
+     * Process the next queued request if concurrency allows
+     */
+    private _processNextQueuedRequest;
     /**
      * Get current status of the store
      */
@@ -31,21 +34,3 @@ declare class GlobalFetchStore implements FetchStore {
         config: BatchFetchConfig;
     };
 }
-/**
- * Global singleton instance of the fetch store
- */
-export declare const globalFetchStore: GlobalFetchStore;
-/**
- * Configure the global fetch store
- */
-export declare function configureBatchFetch(config: BatchFetchConfig): void;
-/**
- * Get the current status of the global fetch store
- */
-export declare function getFetchStatus(): {
-    concurrency: number;
-    activeRequests: number;
-    queueLength: number;
-    config: BatchFetchConfig;
-};
-export {};

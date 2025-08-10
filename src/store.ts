@@ -3,43 +3,26 @@ import type {
   FetchStore,
   InternalRequestInit,
 } from "./types";
-
-/**
- * Default configuration for batch fetch operations
- */
-const DEFAULT_CONFIG: Required<BatchFetchConfig> = {
-  concurrency:
-    typeof navigator !== "undefined" && navigator.hardwareConcurrency
-      ? navigator.hardwareConcurrency
-      : 10,
-  timeout: 30000, // 30 seconds
-  defaultInit: {},
-};
+import GlobalConfig from "./config";
 
 /**
  * Global store for managing fetch concurrency across the entire application
  */
-class GlobalFetchStore implements FetchStore {
-  private _concurrency: number;
+export default class GlobalFetchStore implements FetchStore {
   private _activeRequests: number = 0;
   private _requestQueue: Array<() => Promise<void>> = [];
-  private _config: Required<BatchFetchConfig>;
+  private static _instance: GlobalFetchStore;
 
-  constructor(config: BatchFetchConfig = {}) {
-    this._config = { ...DEFAULT_CONFIG, ...config };
-    this._concurrency = this._config.concurrency;
+  private constructor() {}
+  static get instance(): GlobalFetchStore {
+    if (!GlobalFetchStore._instance) {
+      GlobalFetchStore._instance = new GlobalFetchStore();
+    }
+    return GlobalFetchStore._instance;
   }
 
   get concurrency(): number {
-    return this._concurrency;
-  }
-
-  set concurrency(value: number) {
-    if (value < 1) {
-      throw new Error("Concurrency must be at least 1");
-    }
-    this._concurrency = value;
-    this._config.concurrency = value;
+    return GlobalConfig.instance.concurrency;
   }
 
   get activeRequests(): number {
@@ -50,18 +33,8 @@ class GlobalFetchStore implements FetchStore {
     return [...this._requestQueue];
   }
 
-  get config(): BatchFetchConfig {
-    return { ...this._config };
-  }
-
-  /**
-   * Update the global configuration
-   */
-  updateConfig(config: Partial<BatchFetchConfig>): void {
-    this._config = { ...this._config, ...config };
-    if (config.concurrency !== undefined) {
-      this.concurrency = config.concurrency;
-    }
+  get config() {
+    return GlobalConfig.instance.config;
   }
 
   /**
@@ -71,15 +44,40 @@ class GlobalFetchStore implements FetchStore {
     resource: RequestInfo | URL,
     init?: InternalRequestInit
   ): Promise<Response> {
+    // If we're at the concurrency limit, queue this request
+    if (this._activeRequests >= this.concurrency) {
+      return new Promise((resolve, reject) => {
+        this._requestQueue.push(async () => {
+          try {
+            const result = await this._executeFetchInternal(resource, init);
+            resolve(result);
+          } catch (error) {
+            reject(error);
+          }
+        });
+      });
+    }
+
+    // Otherwise execute immediately
+    return this._executeFetchInternal(resource, init);
+  }
+
+  /**
+   * Internal method to execute fetch and manage active request count
+   */
+  private async _executeFetchInternal(
+    resource: RequestInfo | URL,
+    init?: InternalRequestInit
+  ): Promise<Response> {
     // Create timeout controller if timeout is specified
-    const timeoutMs = (init as any)?.timeout || this._config.timeout;
+    const timeoutMs = (init as any)?.timeout || GlobalConfig.instance.timeout;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       // Merge default init with provided init
       const finalInit: RequestInit = {
-        ...this._config.defaultInit,
+        ...GlobalConfig.instance.defaultInit,
         ...init,
         signal: controller.signal,
       };
@@ -95,6 +93,23 @@ class GlobalFetchStore implements FetchStore {
       throw error;
     } finally {
       this._activeRequests--;
+      // Process next queued request if any
+      this._processNextQueuedRequest();
+    }
+  }
+
+  /**
+   * Process the next queued request if concurrency allows
+   */
+  private _processNextQueuedRequest(): void {
+    if (
+      this._requestQueue.length > 0 &&
+      this._activeRequests < this.concurrency
+    ) {
+      const nextRequest = this._requestQueue.shift();
+      if (nextRequest) {
+        nextRequest();
+      }
     }
   }
 
@@ -108,29 +123,10 @@ class GlobalFetchStore implements FetchStore {
     config: BatchFetchConfig;
   } {
     return {
-      concurrency: this._concurrency,
+      concurrency: this.concurrency,
       activeRequests: this._activeRequests,
       queueLength: this._requestQueue.length,
       config: this.config,
     };
   }
-}
-
-/**
- * Global singleton instance of the fetch store
- */
-export const globalFetchStore = new GlobalFetchStore();
-
-/**
- * Configure the global fetch store
- */
-export function configureBatchFetch(config: BatchFetchConfig): void {
-  globalFetchStore.updateConfig(config);
-}
-
-/**
- * Get the current status of the global fetch store
- */
-export function getFetchStatus() {
-  return globalFetchStore.getStatus();
 }

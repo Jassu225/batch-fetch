@@ -1,15 +1,40 @@
-import { describe, it, expect, beforeEach } from "@jest/globals";
 import {
-  fetch,
-  fetchList,
-  configureBatchFetch,
-  getFetchStatus,
-} from "../index";
+  describe,
+  it,
+  expect,
+  beforeEach,
+  beforeAll,
+  afterAll,
+} from "@jest/globals";
+import { fetch, fetchList, GlobalConfig, GlobalFetchStore } from "../index";
 
 describe("Real API Tests", () => {
+  let originalFetch: typeof globalThis.fetch;
+  let maxConcurrentCalls = 0,
+    currentConcurrentCalls = 0;
+
+  beforeAll(() => {
+    originalFetch = globalThis.fetch;
+    globalThis.fetch = async (...args: Parameters<typeof originalFetch>) => {
+      currentConcurrentCalls++;
+      maxConcurrentCalls = Math.max(maxConcurrentCalls, currentConcurrentCalls);
+      try {
+        return await originalFetch(...args);
+      } finally {
+        currentConcurrentCalls--;
+      }
+    };
+  });
+
+  afterAll(() => {
+    globalThis.fetch = originalFetch;
+  });
+
   beforeEach(() => {
+    maxConcurrentCalls = 0;
+    currentConcurrentCalls = 0;
     // Reset configuration before each test
-    configureBatchFetch({
+    GlobalConfig.instance.updateConfig({
       concurrency: 3,
       timeout: 10000,
       defaultInit: {},
@@ -36,12 +61,9 @@ describe("Real API Tests", () => {
     it("should fetch multiple cat facts concurrently", async () => {
       const requests = Array.from({ length: 5 }, () => CAT_FACT_API);
 
-      const startTime = Date.now();
-      const results = await fetchList(requests, { concurrency: 3 });
-      const endTime = Date.now();
+      const results = await fetchList(requests, { concurrency: 2 });
 
-      // Should complete faster than sequential requests
-      expect(endTime - startTime).toBeLessThan(10000);
+      expect(maxConcurrentCalls).toBe(2);
 
       // All requests should succeed
       expect(results).toHaveLength(5);
@@ -71,6 +93,8 @@ describe("Real API Tests", () => {
       ];
 
       const results = await fetchList(requests);
+
+      expect(maxConcurrentCalls).toBe(3);
 
       expect(results).toHaveLength(4);
 
@@ -102,6 +126,8 @@ describe("Real API Tests", () => {
       // Set low concurrency to test queue management
       const results = await fetchList(requests, { concurrency: 2 });
 
+      expect(maxConcurrentCalls).toBe(2);
+
       expect(results).toHaveLength(10);
       results.forEach((result) => {
         expect(result.success).toBe(true);
@@ -110,7 +136,7 @@ describe("Real API Tests", () => {
 
     it("should use override config without affecting global state", async () => {
       // Get initial global concurrency
-      const initialStatus = getFetchStatus();
+      const initialStatus = GlobalFetchStore.instance.getStatus();
       const initialConcurrency = initialStatus.concurrency;
 
       const requests = Array.from({ length: 3 }, () => CAT_FACT_API);
@@ -122,6 +148,8 @@ describe("Real API Tests", () => {
         defaultInit: { headers: { "X-Test": "override" } },
       });
 
+      expect(maxConcurrentCalls).toBe(1);
+
       // Verify results
       expect(results).toHaveLength(3);
       results.forEach((result) => {
@@ -129,9 +157,32 @@ describe("Real API Tests", () => {
       });
 
       // Verify global state is unchanged
-      const finalStatus = getFetchStatus();
+      const finalStatus = GlobalFetchStore.instance.getStatus();
       expect(finalStatus.concurrency).toBe(initialConcurrency);
       expect(finalStatus.config.timeout).toBe(10000); // Should still be the beforeEach value
+    }, 20000);
+
+    it("should limit concurrent fetch calls using global store", async () => {
+      // Set low concurrency to test limiting
+      GlobalConfig.instance.updateConfig({ concurrency: 2 });
+
+      // Create multiple fetch promises that should be limited by concurrency
+      const fetchPromises = Array.from({ length: 5 }, (_, i) =>
+        fetch(`${CAT_FACT_API}?index=${i}`)
+      );
+
+      // All should complete successfully despite concurrency limit
+      const responses = await Promise.all(fetchPromises);
+
+      expect(maxConcurrentCalls).toBe(2);
+
+      responses.forEach((response, i) => {
+        expect(response.ok).toBe(true);
+      });
+
+      // Verify that the global store managed the concurrency
+      const status = GlobalFetchStore.instance.getStatus();
+      expect(status.concurrency).toBe(2);
     }, 20000);
 
     it("should handle request with custom headers", async () => {
@@ -180,7 +231,9 @@ describe("Real API Tests", () => {
         "https://catfact.ninja/fact",
       ];
 
-      const results = await fetchList(requests);
+      const results = await fetchList(requests, { concurrency: 1 });
+
+      expect(maxConcurrentCalls).toBe(1);
 
       expect(results).toHaveLength(3);
       expect(results[0].success).toBe(true);
@@ -206,7 +259,7 @@ describe("Real API Tests", () => {
 
   describe("Configuration", () => {
     it("should apply global configuration", async () => {
-      configureBatchFetch({
+      GlobalConfig.instance.updateConfig({
         concurrency: 1,
         timeout: 15000,
         defaultInit: {
@@ -216,7 +269,7 @@ describe("Real API Tests", () => {
         },
       });
 
-      const status = getFetchStatus();
+      const status = GlobalFetchStore.instance.getStatus();
       expect(status.concurrency).toBe(1);
       expect(status.config.timeout).toBe(15000);
 
@@ -236,7 +289,9 @@ describe("Real API Tests", () => {
       // might be tricky due to timing, so we just verify the final state
       const results = await fetchPromise;
 
-      const finalStatus = getFetchStatus();
+      expect(maxConcurrentCalls).toBe(2);
+
+      const finalStatus = GlobalFetchStore.instance.getStatus();
       expect(finalStatus.activeRequests).toBe(0);
       expect(results).toHaveLength(5);
     }, 25000);

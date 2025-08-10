@@ -4,10 +4,12 @@
  */
 
 describe("Cat Facts API Demo", () => {
-  const CAT_FACT_API = "https://catfact.ninja/fact";
+  const CAT_API = "https://catfact.ninja";
+  const CAT_FACT_ENDPOINT = `${CAT_API}/fact`;
+  const CAT_BREEDS_ENDPOINT = `${CAT_API}/breeds`;
 
   it("should fetch a cat fact using native fetch", async () => {
-    const response = await fetch(CAT_FACT_API);
+    const response = await fetch(CAT_FACT_ENDPOINT);
 
     expect(response.ok).toBe(true);
     expect(response.status).toBe(200);
@@ -23,7 +25,7 @@ describe("Cat Facts API Demo", () => {
   }, 10000);
 
   it("should fetch multiple cat facts concurrently", async () => {
-    const promises = Array.from({ length: 5 }, () => fetch(CAT_FACT_API));
+    const promises = Array.from({ length: 5 }, () => fetch(CAT_FACT_ENDPOINT));
 
     const startTime = Date.now();
     const responses = await Promise.all(promises);
@@ -42,7 +44,7 @@ describe("Cat Facts API Demo", () => {
   }, 15000);
 
   it("should fetch cat breeds", async () => {
-    const response = await fetch("https://catfact.ninja/breeds?limit=3");
+    const response = await fetch(`${CAT_BREEDS_ENDPOINT}?limit=3`);
 
     expect(response.ok).toBe(true);
     const data = await response.json();
@@ -83,12 +85,12 @@ describe("Cat Facts API Demo", () => {
     );
 
     // Split requests into batches to simulate concurrency control
-    const batches = [];
+    const batches: Promise<unknown>[][] = [];
     for (let i = 0; i < REQUESTS; i += BATCH_SIZE) {
-      const batch = Array.from(
+      const batch: Promise<unknown>[] = Array.from(
         { length: Math.min(BATCH_SIZE, REQUESTS - i) },
         () => {
-          return fetch(CAT_FACT_API).then((r) => r.json());
+          return fetch(CAT_FACT_ENDPOINT).then((r) => r.json());
         }
       );
       batches.push(batch);
@@ -97,7 +99,7 @@ describe("Cat Facts API Demo", () => {
     const startTime = Date.now();
 
     // Process batches sequentially (simulating concurrency limit)
-    const allResults = [];
+    const allResults: unknown[] = [];
     for (const batch of batches) {
       const batchResults = await Promise.all(batch);
       allResults.push(...batchResults);
