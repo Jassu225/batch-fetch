@@ -1,0 +1,44 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_changed:
+        description: "Whether version changed"
+        required: true
+        type: string
+      version:
+        description: "Version to publish"
+        required: true
+        type: string
+      run_id:
+        description: "Build run ID"
+        required: true
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: ./.github/actions/setup-node
+
+      - name: Publish to npm
+        if: inputs.version_changed == 'true'
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create and push tag
+        if: inputs.version_changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a "v${{ inputs.version }}" -m "Release v${{ inputs.version }}"
+          git push origin "v${{ inputs.version }}"
