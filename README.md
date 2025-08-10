@@ -1,5 +1,8 @@
 # ts-batch-fetch
 
+![NPM Version](https://img.shields.io/npm/v/ts-batch-fetch)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/jassu225/batch-fetch/build-test-publish.yaml?color=f7643b)
+
 A powerful, concurrency-controlled fetch library for browsers built on top of [ts-batch-processor](https://www.npmjs.com/package/ts-batch-processor). Provides a drop-in replacement for the browser's fetch API with built-in concurrency management and batch processing capabilities.
 
 ## ✨ Features
