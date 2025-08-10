@@ -1,6 +1,6 @@
 {
   "name": "ts-batch-fetch",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "A concurrency-controlled fetch library for browsers using ts-batch-processor",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
