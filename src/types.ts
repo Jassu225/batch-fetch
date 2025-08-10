@@ -3,7 +3,7 @@
  */
 export interface BatchFetchConfig {
   /** Maximum number of concurrent fetch requests. Defaults to navigator.hardwareConcurrency or 10 */
-  concurrency?: number;
+  concurrency: number;
   /** Default timeout for fetch requests in milliseconds */
   timeout?: number;
   /** Default request init options to apply to all requests */
@@ -68,15 +68,12 @@ export interface BatchFetchResult {
  * Global store for managing fetch concurrency
  */
 export interface FetchStore {
-  /** Current concurrency limit */
-  concurrency: number;
   /** Number of active requests */
   activeRequests: number;
   /** Queue of pending requests */
   requestQueue: Array<() => Promise<void>>;
   /** Get current status */
   getStatus(): {
-    concurrency: number;
     activeRequests: number;
     queueLength: number;
     config: BatchFetchConfig;

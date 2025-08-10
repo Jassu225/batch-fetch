@@ -10,7 +10,7 @@ A powerful, concurrency-controlled fetch library for browsers built on top of [t
 - 🛡️ **Error Handling**: Graceful error handling with detailed error information
 - 🎯 **TypeScript**: Full TypeScript support with comprehensive type definitions
 - 🌐 **Browser-First**: Optimized for browser environments
-- 📊 **Progress Tracking**: Built-in progress tracking and status monitoring
+
 - 🔄 **Promise-Based**: Modern async/await support
 
 ## 📦 Installation
@@ -25,10 +25,15 @@ npm install ts-batch-fetch
 
 ```typescript
 import { fetch } from "ts-batch-fetch";
+// Or use as default export
+import batchFetch from "ts-batch-fetch";
 
 // Use exactly like regular fetch, but with automatic concurrency control
 const response = await fetch("/api/data");
 const data = await response.json();
+
+// Same with default export
+const response2 = await batchFetch("/api/data");
 ```
 
 ### Batch Processing with fetchList
@@ -60,7 +65,7 @@ results.forEach((result, index) => {
 
 ### `fetch(resource, init?)`
 
-Drop-in replacement for browser's fetch with additional concurrency options.
+Drop-in replacement for browser's fetch with additional timeout options.
 
 ```typescript
 import { fetch } from "ts-batch-fetch";
@@ -68,9 +73,8 @@ import { fetch } from "ts-batch-fetch";
 // Basic usage
 const response = await fetch("/api/data");
 
-// With concurrency override
+// With timeout
 const response = await fetch("/api/data", {
-  concurrency: 1, // Override global concurrency for this request
   timeout: 5000, // Request timeout in ms
 });
 ```
@@ -78,8 +82,7 @@ const response = await fetch("/api/data", {
 #### Parameters
 
 - `resource`: `RequestInfo | URL` - The resource to fetch
-- `init?`: `BatchRequestInit` - Request options with additional batch-specific properties
-  - `concurrency?`: `number` - Override global concurrency for this request
+- `init?`: `FetchRequestInit` - Request options with additional timeout property
   - `timeout?`: `number` - Request timeout in milliseconds
   - All other standard `RequestInit` properties
 
@@ -87,7 +90,7 @@ const response = await fetch("/api/data", {
 
 - `Promise<Response>` - Standard fetch Response object
 
-### `fetchList(requests, globalConfig?)`
+### `fetchList(requests, overrideConfig?)`
 
 Fetch multiple resources with concurrency control.
 
@@ -97,7 +100,10 @@ import { fetchList } from "ts-batch-fetch";
 const requests = [
   "/api/endpoint1",
   new URL("https://api.example.com/data"),
-  { resource: "/api/endpoint2", init: { method: "POST" } },
+  {
+    resource: "/api/endpoint2",
+    init: { method: "POST" },
+  },
   {
     resource: "/api/endpoint3",
     init: { headers: { Accept: "application/json" } },
@@ -110,7 +116,7 @@ const results = await fetchList(requests, { concurrency: 3 });
 #### Parameters
 
 - `requests`: `(RequestInfo | URL | FetchArgs)[]` - Array of requests to process
-- `globalConfig?`: `BatchFetchConfig` - Optional configuration for this batch
+- `overrideConfig?`: `BatchFetchConfig` - Optional configuration for this batch. Overrides global config
 
 #### Returns
 
@@ -121,12 +127,12 @@ const results = await fetchList(requests, { concurrency: 3 });
 #### Global Configuration
 
 ```typescript
-import { configureBatchFetch, getFetchStatus } from "ts-batch-fetch";
+import { updateConfig, getConfig, resetConfig } from "ts-batch-fetch";
 
 // Configure global defaults
-configureBatchFetch({
+updateConfig({
   concurrency: 5, // Max concurrent requests
-  timeout: 30000, // Default timeout (30s)
+  timeout: 15000, // Default timeout (15s)
   defaultInit: {
     // Default RequestInit for all requests
     headers: {
@@ -135,19 +141,37 @@ configureBatchFetch({
   },
 });
 
-// Check current status
-const status = getFetchStatus();
-console.log(`Active requests: ${status.activeRequests}/${status.concurrency}`);
+// Get current configuration
+const config = getConfig();
+console.log(`Current concurrency: ${config.concurrency}`);
+
+// Reset to defaults if needed
+resetConfig();
 ```
 
 #### Per-Request Configuration
 
 ```typescript
-// Override concurrency for specific requests
-const response = await fetch("/api/data", { concurrency: 1 });
-
 // Set timeout for specific requests
 const response = await fetch("/api/data", { timeout: 10000 });
+
+// Override concurrency for specific batch
+const results = await fetchList(requests, { concurrency: 1 });
+```
+
+#### Configuration Helper Functions
+
+```typescript
+import { getConfig, updateConfig, resetConfig } from "ts-batch-fetch";
+
+// Get current configuration
+const currentConfig = getConfig();
+
+// Update specific settings
+updateConfig({ concurrency: 8, timeout: 20000 });
+
+// Reset to defaults
+resetConfig();
 ```
 
 ## 🧩 Utility Functions
@@ -176,8 +200,6 @@ const responses = extractResponses(results);
 // Extract just the Error objects
 const errors = extractErrors(results);
 ```
-
-
 
 ## 📖 Usage Examples
 
@@ -233,57 +255,20 @@ const results = await fetchList(requests);
 console.log(`Completed ${results.length} requests`);
 ```
 
-### Example 3: Error Handling and Retries
-
-```typescript
-import { fetch } from "ts-batch-fetch";
-
-async function fetchWithRetry(url: string, maxRetries = 3) {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const response = await fetch(url, { timeout: 5000 });
-      if (response.ok) return response;
-      throw new Error(`HTTP ${response.status}`);
-    } catch (error) {
-      if (attempt === maxRetries) throw error;
-      await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
-    }
-  }
-}
-```
-
-### Example 4: Progress Monitoring
-
-```typescript
-import { fetchList, getFetchStatus } from "ts-batch-fetch";
-
-const requests = Array.from({ length: 20 }, (_, i) => `/api/item/${i}`);
-
-// Monitor progress
-const progressInterval = setInterval(() => {
-  const status = getFetchStatus();
-  console.log(`Progress: ${status.activeRequests} active requests`);
-}, 1000);
-
-try {
-  const results = await fetchList(requests, { concurrency: 5 });
-  console.log(`Completed ${results.length} requests`);
-} finally {
-  clearInterval(progressInterval);
-}
-```
-
 ## 🔧 TypeScript Types
 
 ```typescript
 interface BatchFetchConfig {
-  concurrency?: number;
+  concurrency: number;
   timeout?: number;
   defaultInit?: RequestInit;
 }
 
 interface BatchRequestInit extends RequestInit {
-  concurrency?: number;
+  timeout?: number;
+}
+
+interface FetchRequestInit extends RequestInit {
   timeout?: number;
 }
 
@@ -307,7 +292,7 @@ interface BatchFetchResult {
 1. **Choose appropriate concurrency**: Balance between performance and resource usage
 2. **Use timeouts**: Prevent hanging requests from blocking the queue
 3. **Batch similar requests**: Group related requests together for better efficiency
-4. **Monitor active requests**: Use `getFetchStatus()` to track performance
+4. **Use configuration helpers**: Use `getConfig()` and `updateConfig()` for dynamic configuration management
 
 ## 🔗 Dependencies
 

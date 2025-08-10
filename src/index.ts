@@ -14,8 +14,7 @@ export {
 } from "./batch-fetch";
 
 // Configuration and store management
-export { default as GlobalFetchStore } from "./store";
-export { default as GlobalConfig } from "./config";
+export { getConfig, updateConfig, resetConfig } from "./config";
 
 // Types
 export type {
@@ -25,10 +24,6 @@ export type {
   BatchFetchResult,
   FetchStore,
 } from "./types";
-
-// Re-export useful types from ts-batch-processor
-export { TaskResponseStatus } from "ts-batch-processor/task";
-export type { TaskResult } from "ts-batch-processor/task";
 
 /**
  * Default export provides the main fetch function as a drop-in replacement

@@ -100,3 +100,13 @@ export default class GlobalConfig {
     this._config = { ...DEFAULT_CONFIG };
   }
 }
+
+export const getConfig = () => GlobalConfig.instance.config;
+
+export const updateConfig = (config: Partial<BatchFetchConfig>) => {
+  GlobalConfig.instance.updateConfig(config);
+};
+
+export const resetConfig = () => {
+  GlobalConfig.instance.resetToDefaults();
+};

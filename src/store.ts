@@ -21,10 +21,6 @@ export default class GlobalFetchStore implements FetchStore {
     return GlobalFetchStore._instance;
   }
 
-  get concurrency(): number {
-    return GlobalConfig.instance.concurrency;
-  }
-
   get activeRequests(): number {
     return this._activeRequests;
   }
@@ -45,7 +41,7 @@ export default class GlobalFetchStore implements FetchStore {
     init?: InternalRequestInit
   ): Promise<Response> {
     // If we're at the concurrency limit, queue this request
-    if (this._activeRequests >= this.concurrency) {
+    if (this._activeRequests >= this.config.concurrency) {
       return new Promise((resolve, reject) => {
         this._requestQueue.push(async () => {
           try {
@@ -104,7 +100,7 @@ export default class GlobalFetchStore implements FetchStore {
   private _processNextQueuedRequest(): void {
     if (
       this._requestQueue.length > 0 &&
-      this._activeRequests < this.concurrency
+      this._activeRequests < this.config.concurrency
     ) {
       const nextRequest = this._requestQueue.shift();
       if (nextRequest) {
@@ -117,13 +113,11 @@ export default class GlobalFetchStore implements FetchStore {
    * Get current status of the store
    */
   getStatus(): {
-    concurrency: number;
     activeRequests: number;
     queueLength: number;
     config: BatchFetchConfig;
   } {
     return {
-      concurrency: this.concurrency,
       activeRequests: this._activeRequests,
       queueLength: this._requestQueue.length,
       config: this.config,

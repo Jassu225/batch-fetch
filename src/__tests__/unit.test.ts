@@ -5,7 +5,7 @@ import {
   extractResponses,
   extractErrors,
 } from "../batch-fetch";
-import GlobalConfig from "../config";
+import GlobalConfig, { getConfig } from "../config";
 import GlobalFetchStore from "../store";
 import type { BatchFetchResult } from "../types";
 
@@ -13,7 +13,7 @@ describe("Unit Tests", () => {
   describe("Store Configuration", () => {
     it("should have default configuration", () => {
       const status = GlobalFetchStore.instance.getStatus();
-      expect(status.concurrency).toBeGreaterThan(0);
+      expect(status.config.concurrency).toBeGreaterThan(0);
       expect(status.activeRequests).toBe(0);
       expect(status.queueLength).toBe(0);
       expect(status.config).toBeDefined();
@@ -21,8 +21,9 @@ describe("Unit Tests", () => {
 
     it("should update concurrency", () => {
       GlobalConfig.instance.updateConfig({ concurrency: 8 });
-      expect(GlobalFetchStore.instance.concurrency).toBe(8);
-      expect(GlobalFetchStore.instance.getStatus().concurrency).toBe(8);
+      expect(GlobalConfig.instance.concurrency).toBe(8);
+      expect(GlobalFetchStore.instance.config.concurrency).toBe(8);
+      expect(getConfig().concurrency).toBe(8);
     });
 
     it("should throw error for invalid concurrency", () => {
@@ -42,10 +43,10 @@ describe("Unit Tests", () => {
         defaultInit: { headers: { "User-Agent": "TestAgent" } },
       });
 
-      const status = GlobalFetchStore.instance.getStatus();
-      expect(status.concurrency).toBe(6);
-      expect(status.config.timeout).toBe(15000);
-      expect(status.config.defaultInit).toEqual({
+      const config = GlobalConfig.instance.config;
+      expect(config.concurrency).toBe(6);
+      expect(config.timeout).toBe(15000);
+      expect(config.defaultInit).toEqual({
         headers: { "User-Agent": "TestAgent" },
       });
     });
