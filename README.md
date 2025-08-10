@@ -1,4 +1,4 @@
-# batch-fetch
+# ts-batch-fetch
 
 A powerful, concurrency-controlled fetch library for browsers built on top of [ts-batch-processor](https://www.npmjs.com/package/ts-batch-processor). Provides a drop-in replacement for the browser's fetch API with built-in concurrency management and batch processing capabilities.
 
@@ -16,7 +16,7 @@ A powerful, concurrency-controlled fetch library for browsers built on top of [t
 ## 📦 Installation
 
 ```bash
-npm install batch-fetch
+npm install ts-batch-fetch
 ```
 
 ## 🚀 Quick Start
@@ -24,7 +24,7 @@ npm install batch-fetch
 ### Basic Usage - Drop-in fetch replacement
 
 ```typescript
-import { fetch } from "batch-fetch";
+import { fetch } from "ts-batch-fetch";
 
 // Use exactly like regular fetch, but with automatic concurrency control
 const response = await fetch("/api/data");
@@ -34,7 +34,7 @@ const data = await response.json();
 ### Batch Processing with fetchList
 
 ```typescript
-import { fetchList } from "batch-fetch";
+import { fetchList } from "ts-batch-fetch";
 
 // Fetch multiple resources with concurrency control
 const requests = [
@@ -63,7 +63,7 @@ results.forEach((result, index) => {
 Drop-in replacement for browser's fetch with additional concurrency options.
 
 ```typescript
-import { fetch } from "batch-fetch";
+import { fetch } from "ts-batch-fetch";
 
 // Basic usage
 const response = await fetch("/api/data");
@@ -92,7 +92,7 @@ const response = await fetch("/api/data", {
 Fetch multiple resources with concurrency control.
 
 ```typescript
-import { fetchList, createFetchArgs } from "batch-fetch";
+import { fetchList, createFetchArgs } from "ts-batch-fetch";
 
 const requests = [
   "/api/endpoint1",
@@ -121,7 +121,7 @@ const results = await fetchList(requests, { concurrency: 3 });
 #### Global Configuration
 
 ```typescript
-import { configureBatchFetch, getFetchStatus } from "batch-fetch";
+import { configureBatchFetch, getFetchStatus } from "ts-batch-fetch";
 
 // Configure global defaults
 configureBatchFetch({
@@ -160,7 +160,7 @@ import {
   getFailedResults,
   extractResponses,
   extractErrors,
-} from "batch-fetch";
+} from "ts-batch-fetch";
 
 const results = await fetchList(["/api/1", "/api/2", "/api/3"]);
 
@@ -180,7 +180,7 @@ const errors = extractErrors(results);
 ### Creating Fetch Arguments
 
 ```typescript
-import { createFetchArgs } from "batch-fetch";
+import { createFetchArgs } from "ts-batch-fetch";
 
 // Helper for creating FetchArgs objects
 const args = createFetchArgs("/api/data", {
@@ -195,7 +195,7 @@ const args = createFetchArgs("/api/data", {
 ### Example 1: API Batch Processing
 
 ```typescript
-import { fetchList, getSuccessfulResults } from "batch-fetch";
+import { fetchList, getSuccessfulResults } from "ts-batch-fetch";
 
 async function fetchUserData() {
   const userIds = [1, 2, 3, 4, 5];
@@ -216,7 +216,7 @@ async function fetchUserData() {
 ### Example 2: Mixed Request Types
 
 ```typescript
-import { fetchList, createFetchArgs } from "batch-fetch";
+import { fetchList, createFetchArgs } from "ts-batch-fetch";
 
 const requests = [
   // Simple GET requests
@@ -244,7 +244,7 @@ console.log(`Completed ${results.length} requests`);
 ### Example 3: Error Handling and Retries
 
 ```typescript
-import { fetch } from "batch-fetch";
+import { fetch } from "ts-batch-fetch";
 
 async function fetchWithRetry(url: string, maxRetries = 3) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -263,7 +263,7 @@ async function fetchWithRetry(url: string, maxRetries = 3) {
 ### Example 4: Progress Monitoring
 
 ```typescript
-import { fetchList, getFetchStatus } from "batch-fetch";
+import { fetchList, getFetchStatus } from "ts-batch-fetch";
 
 const requests = Array.from({ length: 20 }, (_, i) => `/api/item/${i}`);
 
