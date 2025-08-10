@@ -40,7 +40,7 @@
     "rate-limiting",
     "typescript"
   ],
-  "author": "",
+  "author": "Jaswanth Sai Sattenapalli <jaswanthsaisattenapalli@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "ts-batch-processor": "^1.2.2"
@@ -49,10 +49,8 @@
     "@jest/globals": "^30.0.5",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.2.1",
-    "dotenv-cli": "^10.0.0",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
-    "openai": "^5.12.2",
     "ts-jest": "^29.4.1",
     "tsx": "^4.20.3",
     "typescript": "^5.9.2",
